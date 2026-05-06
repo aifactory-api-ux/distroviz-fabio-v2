@@ -13,7 +13,11 @@ async function bootstrap() {
   app.enableCors();
 
   const port = process.env.API_PORT || 23001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
+
+  app.get('/health', (req, res) => {
+    res.send('OK');
+  });
 
   console.log(`API Service running on port ${port}`);
 }
