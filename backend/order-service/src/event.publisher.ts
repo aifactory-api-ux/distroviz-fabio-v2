@@ -10,7 +10,8 @@ export class EventPublisher implements OnModuleInit {
     try {
       const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:25672';
       this.connection = await amqp.connect(url);
-      this.channel = await this.connection.createChannel();
+      const channel = await this.connection.createChannel();
+      this.channel = channel;
       await this.channel.assertQueue('order_events', { durable: true });
       console.log('RabbitMQ connection established in order-service');
     } catch (error) {
