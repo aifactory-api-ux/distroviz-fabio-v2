@@ -11,7 +11,7 @@ import { ProductList } from './components/ProductList';
 function App() {
   const { user, loading: authLoading, error, login, logout, isAuthenticated } = useAuth();
   const { orders, loading: ordersLoading, createOrder, updateOrderStatus, fetchOrders } = useOrders();
-  const { products, loading: productsLoading, fetchProducts } = useProducts();
+  const { products, loading: _productsLoading, fetchProducts } = useProducts();
 
   useEffect(() => {
     if (isAuthenticated) {
