@@ -34,7 +34,7 @@ def test_config_invalid_port_value_raises_error():
     assert result['error_field'] == 'POSTGRES_PORT'
 
 def test_config_defaults_are_applied_when_optional_env_vars_missing():
-    env = {'POSTGRES_HOST': 'localhost', 'POSTGRES_PORT': '25432', 'POSTGRES_USER': 'testuser', 'POSTGRES_PASSWORD': 'testpass', 'POSTGRES_DB': 'testdb', 'REDIS_HOST': 'localhost', 'REDIS_PORT': '26379'}
+    env = {'POSTGRES_HOST': 'localhost', 'POSTGRES_PORT': '25432', 'POSTGRES_USER': 'testuser', 'POSTGRES_PASSWORD': 'testpass', 'POSTGRES_DB': 'testdb', 'REDIS_HOST': 'localhost', 'REDIS_PORT': '26379', 'API_PORT': '23001'}
     result = get_config(env)
     assert result['valid'] is True
 

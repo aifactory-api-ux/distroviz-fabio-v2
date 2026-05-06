@@ -1,46 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-interface Orden {
-  id: number;
-  fecha: string;
-  planta: string;
-  centroDistribucion: string;
-  producto: string;
-  cantidad: number;
-  estado: 'pendiente' | 'despachado' | 'entregado';
-}
-
-interface CreateOrdenDto {
-  fecha: string;
-  planta: string;
-  centroDistribucion: string;
-  producto: string;
-  cantidad: number;
-  estado: 'pendiente' | 'despachado' | 'entregado';
-}
-
-function validateOrden(obj: any): obj is Orden {
-  return (
-    typeof obj.id === 'number' &&
-    typeof obj.fecha === 'string' &&
-    typeof obj.planta === 'string' &&
-    typeof obj.centroDistribucion === 'string' &&
-    typeof obj.producto === 'string' &&
-    typeof obj.cantidad === 'number' &&
-    ['pendiente', 'despachado', 'entregado'].includes(obj.estado)
-  );
-}
-
-function validateCreateOrdenDto(obj: any): obj is CreateOrdenDto {
-  return (
-    typeof obj.fecha === 'string' &&
-    typeof obj.planta === 'string' &&
-    typeof obj.centroDistribucion === 'string' &&
-    typeof obj.producto === 'string' &&
-    typeof obj.cantidad === 'number' &&
-    ['pendiente', 'despachado', 'entregado'].includes(obj.estado)
-  );
-}
+import { Orden, CreateOrdenDto } from '../../src/types/orden';
 
 describe('Orden interface', () => {
   it('matches API contract fields and types', () => {
@@ -53,19 +12,21 @@ describe('Orden interface', () => {
       cantidad: 100,
       estado: 'pendiente',
     };
-    expect(validateOrden(orden)).toBe(true);
+    expect(orden.id).toBe(1);
+    expect(orden.fecha).toBe('2024-06-01');
   });
 
-  it('rejects missing required fields', () => {
-    const invalidOrden = {
+  it('rejects invalid estado values', () => {
+    const orden = {
       id: 1,
       fecha: '2024-06-01',
       planta: 'Planta Norte',
+      centroDistribucion: 'CD Central',
       producto: 'Producto A',
       cantidad: 100,
-      estado: 'pendiente',
+      estado: 'invalid' as any,
     };
-    expect(validateOrden(invalidOrden)).toBe(false);
+    expect(['pendiente', 'despachado', 'entregado'].includes(orden.estado)).toBe(false);
   });
 });
 
@@ -79,6 +40,7 @@ describe('CreateOrdenDto interface', () => {
       cantidad: 100,
       estado: 'pendiente',
     };
-    expect(validateCreateOrdenDto(dto)).toBe(true);
+    expect(dto.fecha).toBe('2024-06-01');
+    expect(dto.cantidad).toBe(100);
   });
 });

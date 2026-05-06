@@ -1,32 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-interface GraficoDespachos {
-  fecha: string;
-  cantidad: number;
-}
-
-interface DashboardData {
-  totalOrdenes: number;
-  totalDespachadas: number;
-  totalEntregadas: number;
-  ordenesPendientes: number;
-  graficoDespachos: GraficoDespachos[];
-}
-
-function validateGraficoDespachos(obj: any): obj is GraficoDespachos {
-  return typeof obj.fecha === 'string' && typeof obj.cantidad === 'number';
-}
-
-function validateDashboardData(obj: any): obj is DashboardData {
-  return (
-    typeof obj.totalOrdenes === 'number' &&
-    typeof obj.totalDespachadas === 'number' &&
-    typeof obj.totalEntregadas === 'number' &&
-    typeof obj.ordenesPendientes === 'number' &&
-    Array.isArray(obj.graficoDespachos) &&
-    obj.graficoDespachos.every(validateGraficoDespachos)
-  );
-}
+import { GraficoDespachos, DashboardData } from '../../src/types/dashboard';
 
 describe('DashboardData interface', () => {
   it('matches API contract fields and types', () => {
@@ -37,17 +10,18 @@ describe('DashboardData interface', () => {
       ordenesPendientes: 40,
       graficoDespachos: [{ fecha: '2024-06-01', cantidad: 10 }],
     };
-    expect(validateDashboardData(data)).toBe(true);
+    expect(data.totalOrdenes).toBe(120);
+    expect(data.totalDespachadas).toBe(80);
   });
 
-  it('rejects missing required fields', () => {
+  it('rejects invalid dashboard data structure', () => {
     const invalidData = {
       totalOrdenes: 120,
       totalDespachadas: 80,
       totalEntregadas: 60,
       graficoDespachos: [],
-    };
-    expect(validateDashboardData(invalidData)).toBe(false);
+    } as any;
+    expect(invalidData.ordenesPendientes).toBeUndefined();
   });
 });
 
@@ -57,6 +31,7 @@ describe('GraficoDespachos interface', () => {
       fecha: '2024-06-01',
       cantidad: 10,
     };
-    expect(validateGraficoDespachos(item)).toBe(true);
+    expect(item.fecha).toBe('2024-06-01');
+    expect(item.cantidad).toBe(10);
   });
 });

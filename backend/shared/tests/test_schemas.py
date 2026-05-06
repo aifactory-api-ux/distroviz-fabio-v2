@@ -41,8 +41,8 @@ class OrdenTable:
         return cursor.fetchall()
 
 def test_orden_table_schema_matches_data_contract():
-    conn = sqlite3.connect(':memory:')
-    cursor = conn.execute('''
+    table = OrdenTable()
+    cursor = table.conn.execute('''
         SELECT name, type FROM pragma_table_info('ordenes')
     ''')
     columns = cursor.fetchall()

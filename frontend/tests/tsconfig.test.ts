@@ -1,14 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-const tsconfig = {
-  compilerOptions: {
-    strict: true,
-    paths: {
-      '@/*': ['src/*'],
-    },
-    target: 'ESNext',
-  },
-};
+import tsconfig from '../tsconfig.json';
 
 describe('tsconfig.json', () => {
   it('has strict mode enabled', () => {
@@ -22,5 +13,13 @@ describe('tsconfig.json', () => {
 
   it('has target set to ESNext', () => {
     expect(tsconfig.compilerOptions.target).toBe('ESNext');
+  });
+
+  it('has jsx configured for react-jsx', () => {
+    expect(tsconfig.compilerOptions.jsx).toBe('react-jsx');
+  });
+
+  it('has noUnusedLocals enabled', () => {
+    expect(tsconfig.compilerOptions.noUnusedLocals).toBe(true);
   });
 });

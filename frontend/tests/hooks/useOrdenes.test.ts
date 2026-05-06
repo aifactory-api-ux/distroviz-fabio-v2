@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { useOrdenes } from '../../src/hooks/useOrdenes';
 
 const mockFetchOrdenes = vi.fn();
 const mockCreateOrden = vi.fn();
@@ -15,21 +17,29 @@ describe('useOrdenes hook', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('fetches and returns ordenes on mount', async () => {
     const ordenes = [{ id: 1, fecha: '2024-06-01', planta: 'Planta Norte', centroDistribucion: 'CD Central', producto: 'Producto A', cantidad: 100, estado: 'pendiente' }];
     mockFetchOrdenes.mockResolvedValueOnce(ordenes);
 
-    const { useOrdenes } = await import('../../src/hooks/useOrdenes');
-    const hookResult = useOrdenes();
-    expect(hookResult.ordenes).toEqual(ordenes);
+    const { result } = renderHook(() => useOrdenes());
+
+    await waitFor(() => {
+      expect(result.current.ordenes).toEqual(ordenes);
+    });
   });
 
   it('handles API error on fetch', async () => {
     mockFetchOrdenes.mockRejectedValueOnce(new Error('API error'));
 
-    const { useOrdenes } = await import('../../src/hooks/useOrdenes');
-    const hookResult = useOrdenes();
-    expect(hookResult.error).toBeDefined();
+    const { result } = renderHook(() => useOrdenes());
+
+    await waitFor(() => {
+      expect(result.current.error).toBeDefined();
+    });
   });
 
   it('can create a new orden and updates state', async () => {
@@ -38,9 +48,21 @@ describe('useOrdenes hook', () => {
     mockFetchOrdenes.mockResolvedValue(ordenes);
     mockCreateOrden.mockResolvedValueOnce(newOrden);
 
-    const { useOrdenes } = await import('../../src/hooks/useOrdenes');
-    const hookResult = useOrdenes();
-    await hookResult.createOrden({ fecha: '2024-06-02', planta: 'Planta Sur', centroDistribucion: 'CD Sur', producto: 'Producto B', cantidad: 200, estado: 'pendiente' });
-    expect(mockCreateOrden).toHaveBeenCalled();
+    const { result } = renderHook(() => useOrdenes());
+
+    await waitFor(() => {
+      expect(result.current.ordenes).toEqual(ordenes);
+    });
+
+    await result.current.createOrden({ fecha: '2024-06-02', planta: 'Planta Sur', centroDistribucion: 'CD Sur', producto: 'Producto B', cantidad: 200, estado: 'pendiente' });
+
+    await waitFor(() => {
+      expect(result.current.ordenes).toEqual([...ordenes, newOrden]);
+    });
+  });
+
+  it('deleteOrden function is defined', () => {
+    const { result } = renderHook(() => useOrdenes());
+    expect(result.current.deleteOrden).toBeDefined();
   });
 });

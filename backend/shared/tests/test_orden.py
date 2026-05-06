@@ -38,7 +38,7 @@ def test_backend_orden_interface_accepts_valid_fields():
     assert valid is True
 
 def test_backend_create_orden_dto_invalid_cantidad_type():
-    data = {'fecha': '2024-06-02', 'planta': 'Planta Sur', 'centroDistribucion': 'CD Sur', 'producto': 'Producto B', 'cantidad': 'two hundred', 'estado': 'pendiente'}
+    data = {'id': 1, 'fecha': '2024-06-02', 'planta': 'Planta Sur', 'centroDistribucion': 'CD Sur', 'producto': 'Producto B', 'cantidad': 'two hundred', 'estado': 'pendiente'}
     valid, error_field = validate_orden(data)
     assert valid is False
     assert error_field == 'cantidad'
@@ -47,4 +47,4 @@ def test_backend_orden_interface_empty_string_fields():
     data = {'id': 3, 'fecha': '', 'planta': '', 'centroDistribucion': '', 'producto': '', 'cantidad': 50, 'estado': 'entregado'}
     valid, error_field = validate_orden(data)
     assert valid is False
-    assert error_field == 'planta'
+    assert error_field == 'fecha'

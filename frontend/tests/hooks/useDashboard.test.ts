@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { useDashboard } from '../../src/hooks/useDashboard';
 
 const mockFetchDashboard = vi.fn();
 
@@ -11,6 +13,10 @@ describe('useDashboard hook', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('fetches and returns dashboard data on mount', async () => {
     const dashboardData = {
       totalOrdenes: 120,
@@ -21,16 +27,25 @@ describe('useDashboard hook', () => {
     };
     mockFetchDashboard.mockResolvedValueOnce(dashboardData);
 
-    const { useDashboard } = await import('../../src/hooks/useDashboard');
-    const hookResult = useDashboard();
-    expect(hookResult.dashboard).toEqual(dashboardData);
+    const { result } = renderHook(() => useDashboard());
+
+    await waitFor(() => {
+      expect(result.current.dashboard).toEqual(dashboardData);
+    });
   });
 
   it('handles API error on fetch', async () => {
     mockFetchDashboard.mockRejectedValueOnce(new Error('API error'));
 
-    const { useDashboard } = await import('../../src/hooks/useDashboard');
-    const hookResult = useDashboard();
-    expect(hookResult.error).toBeDefined();
+    const { result } = renderHook(() => useDashboard());
+
+    await waitFor(() => {
+      expect(result.current.error).toBeDefined();
+    });
+  });
+
+  it('refresh function is defined', () => {
+    const { result } = renderHook(() => useDashboard());
+    expect(result.current.refresh).toBeDefined();
   });
 });

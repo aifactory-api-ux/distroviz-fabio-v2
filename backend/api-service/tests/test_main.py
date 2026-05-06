@@ -40,11 +40,9 @@ def test_app_module_imports_ordenes_and_dashboard_modules():
 
 def test_app_module_initialization_fails_with_missing_dependency():
     app = MockApp()
-    try:
-        app.healthy = False
-        assert False, "Should have raised error"
-    except Exception as e:
-        assert str(e) == "Dependency error"
+    app.healthy = False
+    result = app.get_health()
+    assert result['status_code'] == 503
 
 def test_app_module_routes_are_registered():
     app = MockApp()

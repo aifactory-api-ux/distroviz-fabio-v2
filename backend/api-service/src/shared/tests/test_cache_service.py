@@ -16,15 +16,16 @@ class CacheService:
             raise TypeError("Key must be a string")
         self.store[key] = value
 
-    def del(self, key: str) -> None:
+    def delete(self, key: str) -> None:
         if key in self.store:
             del self.store[key]
 
-def test_cache_set_and_get_value():
+def test_cache_delete_removes_value():
     cache = CacheService()
     cache.set('test-key', 'test-value', 300)
+    cache.delete('test-key')
     result = cache.get('test-key')
-    assert result == 'test-value'
+    assert result is None
 
 def test_cache_get_nonexistent_key_returns_none():
     cache = CacheService()

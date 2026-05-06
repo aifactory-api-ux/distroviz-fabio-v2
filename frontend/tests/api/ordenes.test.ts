@@ -39,9 +39,10 @@ describe('ordenes API', () => {
   it('deleteOrden sends DELETE and returns 204 No Content', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      status: 204,
     });
 
     const { deleteOrden } = await import('../../src/api/ordenes');
-    await expect(deleteOrden(2)).resolves.not.toThrow();
+    await expect(deleteOrden(2)).resolves.toBeUndefined();
   });
 });

@@ -8,7 +8,7 @@ class MockOrden:
 
 class MockDashboardService:
     def __init__(self, ordenes=None):
-        self.ordenes = ordenes or [
+        self.ordenes = ordenes if ordenes is not None else [
             MockOrden('2024-06-01', 'despachado', 10),
             MockOrden('2024-06-01', 'despachado', 15),
             MockOrden('2024-06-02', 'pendiente', 5),
