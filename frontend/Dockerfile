@@ -1,14 +1,24 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
 RUN npm run build
 
-EXPOSE 24000
+FROM node:20-alpine
 
-CMD ["npm", "run", "preview"]
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/index.html ./index.html
+
+EXPOSE 23006
+
+CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "23006"]

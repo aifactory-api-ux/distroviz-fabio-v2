@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  labels:
+    app: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: auth-service:latest
+          ports:
+            - containerPort: 23001
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "23001"
+            - name: DATABASE_URL
+              value: "postgres://distroviz:distrovizpass@postgres:5432/distroviz"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: JWT_SECRET
+              value: "supersecretjwtkey"
+            - name: JWT_EXPIRES_IN
+              value: "3600s"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 23001
+      targetPort: 23001

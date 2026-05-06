@@ -1,14 +1,15 @@
 # DistroViz
 
-Sistema de gestión de órdenes de distribución con dashboard en tiempo real.
+A distributed microservices application with Node.js/NestJS backend and React frontend.
 
-## Tech Stack
+## Services
 
-- **Backend**: Node.js v20.x, NestJS v10.x, TypeScript v5.x
-- **Frontend**: React v18.x, TypeScript v5.x, Vite v4.x
-- **Database**: PostgreSQL v15.x
-- **Cache**: Redis v7.x
-- **Orchestration**: Docker Compose v2.x
+- **auth-service** (port 23001): Authentication service
+- **order-service** (port 23002): Order management
+- **inventory-service** (port 23003): Inventory tracking
+- **product-service** (port 23004): Product catalog
+- **api-gateway** (port 23005): API Gateway
+- **frontend** (port 23006): React frontend
 
 ## Quick Start
 
@@ -16,39 +17,17 @@ Sistema de gestión de órdenes de distribución con dashboard en tiempo real.
 ./run.sh
 ```
 
-Esto iniciará todos los servicios:
-- API Service: http://localhost:23001
-- Frontend: http://localhost:24000
-- PostgreSQL: localhost:25432
-- Redis: localhost:26379
-
-## API Endpoints
-
-- `GET /api/dashboard` - Datos del dashboard
-- `GET /api/ordenes` - Lista de órdenes
-- `POST /api/ordenes` - Crear orden
-- `DELETE /api/ordenes/:id` - Eliminar orden
+This will start all services using Docker Compose.
 
 ## Development
 
-```bash
-# Backend
-cd backend/api-service
-npm install
-npm run start:dev
+1. Copy `.env.example` to `.env` in each service directory
+2. Run `docker-compose up` to start all services
 
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
+## Tech Stack
 
-## Testing
-
-```bash
-# Run all test suites
-./backend/api-service/run_tests.sh
-./backend/shared/run_tests.sh
-./frontend/run_tests.sh
-./shared/types/run_tests.sh
-```
+- Backend: Node.js v20.x, NestJS v10.x, TypeScript v5.x
+- Frontend: React v18.x, TypeScript v5.x
+- Database: PostgreSQL v15.x
+- Cache: Redis v7.x
+- Message Queue: RabbitMQ v3.x

@@ -8,98 +8,212 @@
   - TypeScript v5.x
   - PostgreSQL v15.x
   - Redis v7.x
-  - Docker v24.x
-  - Kubernetes (latest stable)
+  - RabbitMQ v3.x
 - **Frontend**
   - React v18.x
   - TypeScript v5.x
-  - Vite v4.x
 - **Infrastructure**
-  - Docker Compose v2.x
+  - Docker v24.x
+  - docker-compose v2.x
+  - Kubernetes v1.28.x
 
 ---
 
 ## 2. DATA CONTRACTS
 
-### Backend (TypeScript/NestJS) — DTOs
+### Backend (NestJS/TypeScript)
+
+#### Order
 
 ```typescript
-// backend/src/ordenes/dto/orden.dto.ts
-export interface Orden {
-  id: number;
-  fecha: string; // ISO 8601 date string
-  planta: string;
-  centroDistribucion: string;
-  producto: string;
-  cantidad: number;
-  estado: 'pendiente' | 'despachado' | 'entregado';
-}
-
-// backend/src/dashboard/dto/dashboard.dto.ts
-export interface DashboardData {
-  totalOrdenes: number;
-  totalDespachadas: number;
-  totalEntregadas: number;
-  ordenesPendientes: number;
-  graficoDespachos: GraficoDespachos[];
-}
-
-export interface GraficoDespachos {
-  fecha: string; // ISO 8601 date string
-  cantidad: number;
+export interface Order {
+  id: string; // UUID
+  userId: string; // UUID
+  productId: string; // UUID
+  quantity: number;
+  status: 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'CANCELLED';
+  createdAt: string; // ISO8601
+  updatedAt: string; // ISO8601
 }
 ```
 
-### Frontend (TypeScript/React) — Interfaces
+#### InventoryItem
 
 ```typescript
-// frontend/src/types/orden.ts
-export interface Orden {
-  id: number;
-  fecha: string; // ISO 8601 date string
-  planta: string;
-  centroDistribucion: string;
-  producto: string;
-  cantidad: number;
-  estado: 'pendiente' | 'despachado' | 'entregado';
-}
-
-// frontend/src/types/dashboard.ts
-export interface DashboardData {
-  totalOrdenes: number;
-  totalDespachadas: number;
-  totalEntregadas: number;
-  ordenesPendientes: number;
-  graficoDespachos: GraficoDespachos[];
-}
-
-export interface GraficoDespachos {
-  fecha: string; // ISO 8601 date string
-  cantidad: number;
+export interface InventoryItem {
+  id: string; // UUID
+  productId: string; // UUID
+  stock: number;
+  updatedAt: string; // ISO8601
 }
 ```
 
-### Orden Creation DTO
+#### User
 
 ```typescript
-// backend/src/ordenes/dto/create-orden.dto.ts
-export interface CreateOrdenDto {
-  fecha: string; // ISO 8601 date string
-  planta: string;
-  centroDistribucion: string;
-  producto: string;
-  cantidad: number;
-  estado: 'pendiente' | 'despachado' | 'entregado';
+export interface User {
+  id: string; // UUID
+  username: string;
+  email: string;
+  role: 'ADMIN' | 'USER';
+  createdAt: string; // ISO8601
 }
+```
 
-// frontend/src/types/orden.ts
-export interface CreateOrdenDto {
-  fecha: string; // ISO 8601 date string
-  planta: string;
-  centroDistribucion: string;
-  producto: string;
-  cantidad: number;
-  estado: 'pendiente' | 'despachado' | 'entregado';
+#### Product
+
+```typescript
+export interface Product {
+  id: string; // UUID
+  name: string;
+  description: string;
+  sku: string;
+  createdAt: string; // ISO8601
+}
+```
+
+#### OrderCreateRequest
+
+```typescript
+export interface OrderCreateRequest {
+  userId: string; // UUID
+  productId: string; // UUID
+  quantity: number;
+}
+```
+
+#### OrderCreateResponse
+
+```typescript
+export interface OrderCreateResponse {
+  order: Order;
+}
+```
+
+#### InventoryCheckRequest
+
+```typescript
+export interface InventoryCheckRequest {
+  productId: string; // UUID
+  quantity: number;
+}
+```
+
+#### InventoryCheckResponse
+
+```typescript
+export interface InventoryCheckResponse {
+  available: boolean;
+  currentStock: number;
+}
+```
+
+#### AuthTokenResponse
+
+```typescript
+export interface AuthTokenResponse {
+  accessToken: string;
+  expiresIn: number;
+  user: User;
+}
+```
+
+---
+
+### Frontend (React/TypeScript)
+
+#### Order
+
+```typescript
+export interface Order {
+  id: string;
+  userId: string;
+  productId: string;
+  quantity: number;
+  status: 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+#### InventoryItem
+
+```typescript
+export interface InventoryItem {
+  id: string;
+  productId: string;
+  stock: number;
+  updatedAt: string;
+}
+```
+
+#### User
+
+```typescript
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: 'ADMIN' | 'USER';
+  createdAt: string;
+}
+```
+
+#### Product
+
+```typescript
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  sku: string;
+  createdAt: string;
+}
+```
+
+#### OrderCreateRequest
+
+```typescript
+export interface OrderCreateRequest {
+  userId: string;
+  productId: string;
+  quantity: number;
+}
+```
+
+#### OrderCreateResponse
+
+```typescript
+export interface OrderCreateResponse {
+  order: Order;
+}
+```
+
+#### InventoryCheckRequest
+
+```typescript
+export interface InventoryCheckRequest {
+  productId: string;
+  quantity: number;
+}
+```
+
+#### InventoryCheckResponse
+
+```typescript
+export interface InventoryCheckResponse {
+  available: boolean;
+  currentStock: number;
+}
+```
+
+#### AuthTokenResponse
+
+```typescript
+export interface AuthTokenResponse {
+  accessToken: string;
+  expiresIn: number;
+  user: User;
 }
 ```
 
@@ -107,85 +221,55 @@ export interface CreateOrdenDto {
 
 ## 3. API ENDPOINTS
 
-### GET /api/dashboard
+### Auth Service
 
-- **Method:** GET
-- **Path:** `/api/dashboard`
-- **Request Body:** _None_
-- **Response:**
-  - Status: 200 OK
-  - Body: `DashboardData` (see Data Contracts)
+- **POST /api/auth/login**
+  - Request: `{ username: string; password: string }`
+  - Response: `AuthTokenResponse`
 
-```json
-{
-  "totalOrdenes": 120,
-  "totalDespachadas": 80,
-  "totalEntregadas": 60,
-  "ordenesPendientes": 40,
-  "graficoDespachos": [
-    { "fecha": "2024-06-01", "cantidad": 10 },
-    { "fecha": "2024-06-02", "cantidad": 15 }
-  ]
-}
-```
+- **GET /api/auth/me**
+  - Auth: Bearer token
+  - Response: `User`
 
 ---
 
-### GET /api/ordenes
+### Order Service
 
-- **Method:** GET
-- **Path:** `/api/ordenes`
-- **Request Body:** _None_
-- **Response:**
-  - Status: 200 OK
-  - Body: `Orden[]`
+- **POST /api/orders**
+  - Request: `OrderCreateRequest`
+  - Response: `OrderCreateResponse`
 
-```json
-[
-  {
-    "id": 1,
-    "fecha": "2024-06-01",
-    "planta": "Planta Norte",
-    "centroDistribucion": "CD Central",
-    "producto": "Producto A",
-    "cantidad": 100,
-    "estado": "pendiente"
-  }
-]
-```
+- **GET /api/orders**
+  - Query: `userId?: string`
+  - Response: `{ orders: Order[] }`
+
+- **GET /api/orders/:id**
+  - Response: `Order`
+
+- **PATCH /api/orders/:id/status**
+  - Request: `{ status: 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'CANCELLED' }`
+  - Response: `Order`
 
 ---
 
-### POST /api/ordenes
+### Inventory Service
 
-- **Method:** POST
-- **Path:** `/api/ordenes`
-- **Request Body:** `CreateOrdenDto`
-- **Response:**
-  - Status: 201 Created
-  - Body: `Orden`
+- **GET /api/inventory/:productId**
+  - Response: `InventoryItem`
 
-```json
-{
-  "id": 2,
-  "fecha": "2024-06-02",
-  "planta": "Planta Sur",
-  "centroDistribucion": "CD Sur",
-  "producto": "Producto B",
-  "cantidad": 200,
-  "estado": "pendiente"
-}
-```
+- **POST /api/inventory/check**
+  - Request: `InventoryCheckRequest`
+  - Response: `InventoryCheckResponse`
 
 ---
 
-### DELETE /api/ordenes/:id
+### Product Service
 
-- **Method:** DELETE
-- **Path:** `/api/ordenes/:id`
-- **Request Body:** _None_
-- **Response:**
-  - Status: 204 No Content
+- **GET /api/products**
+  - Response: `{ products: Product[] }`
+
+- **GET /api/products/:id**
+  - Response: `Product`
 
 ---
 
@@ -193,18 +277,20 @@ export interface CreateOrdenDto {
 
 ### PORT TABLE
 
-| Service         | Listening Port | Path                        |
-|-----------------|---------------|-----------------------------|
-| api-service     | 23001         | backend/api-service/        |
-| redis           | 26379         | infrastructure/redis/       |
-| postgres        | 25432         | infrastructure/postgres/    |
-| frontend        | 24000         | frontend/                   |
+| Service             | Listening Port | Path                        |
+|---------------------|---------------|-----------------------------|
+| auth-service        | 23001         | backend/auth-service/       |
+| order-service       | 23002         | backend/order-service/      |
+| inventory-service   | 23003         | backend/inventory-service/  |
+| product-service     | 23004         | backend/product-service/    |
+| api-gateway         | 23005         | backend/api-gateway/        |
+| frontend            | 23006         | frontend/                   |
 
 ### SHARED MODULES
 
-| Shared path           | Imported by services      |
-|-----------------------|--------------------------|
-| backend/shared/       | api-service              |
+| Shared path         | Imported by services                                 |
+|---------------------|-----------------------------------------------------|
+| backend/shared/     | auth-service, order-service, inventory-service, product-service, api-gateway |
 
 ---
 
@@ -212,92 +298,128 @@ export interface CreateOrdenDto {
 
 ```
 .
-├── docker-compose.yml                # Multi-service orchestration
-├── .env.example                     # Environment variables template
-├── .gitignore                       # Git ignore rules
-├── README.md                        # Project documentation
-├── run.sh                           # Root-level startup script
+├── docker-compose.yml                # Multi-service orchestration (all ports 21000–65000)
+├── .env.example                      # Template for all environment variables
+├── .gitignore                        # Ignore node_modules, build, .env, etc.
+├── README.md                         # Project overview and setup instructions
+├── run.sh                            # Root-level startup script for local dev
 ├── backend/
-│   ├── api-service/
-│   │   ├── Dockerfile               # API service Docker image
+│   ├── shared/                       # Shared TypeScript modules (DTOs, utils)
+│   │   ├── dtos/
+│   │   │   ├── order.dto.ts          # Order DTOs/interfaces
+│   │   │   ├── inventory.dto.ts      # Inventory DTOs/interfaces
+│   │   │   ├── user.dto.ts           # User DTOs/interfaces
+│   │   │   ├── product.dto.ts        # Product DTOs/interfaces
+│   │   └── utils/
+│   │       └── redis.ts              # Redis connection utility
+│   ├── auth-service/
 │   │   ├── src/
-│   │   │   ├── main.ts              # NestJS entry point
-│   │   │   ├── app.module.ts        # Root module
-│   │   │   ├── ordenes/
-│   │   │   │   ├── ordenes.controller.ts   # Ordenes REST controller
-│   │   │   │   ├── ordenes.service.ts      # Ordenes business logic
-│   │   │   │   ├── dto/
-│   │   │   │   │   ├── orden.dto.ts        # Orden interface
-│   │   │   │   │   └── create-orden.dto.ts # CreateOrdenDto interface
-│   │   │   ├── dashboard/
-│   │   │   │   ├── dashboard.controller.ts # Dashboard REST controller
-│   │   │   │   ├── dashboard.service.ts    # Dashboard business logic
-│   │   │   │   └── dto/
-│   │   │   │       └── dashboard.dto.ts    # DashboardData interface
-│   │   │   ├── shared/
-│   │   │   │   ├── cache.service.ts        # Redis cache abstraction
-│   │   │   │   └── db.service.ts           # PostgreSQL DB abstraction
-│   │   ├── test/
-│   │   │   └── ordenes.e2e-spec.ts         # E2E tests for ordenes
-│   │   └── tsconfig.json                   # TypeScript config
-│   └── shared/
-│       ├── types/
-│       │   ├── orden.ts                    # Shared Orden interface
-│       │   └── dashboard.ts                # Shared DashboardData interface
-│       └── utils/
-│           └── date.ts                     # Date utility functions
-├── infrastructure/
-│   ├── postgres/
-│   │   ├── Dockerfile                      # PostgreSQL image
-│   │   └── init.sql                        # DB schema/init script
-│   └── redis/
-│       └── Dockerfile                      # Redis image
+│   │   │   ├── main.ts               # NestJS bootstrap
+│   │   │   ├── app.module.ts         # Root module
+│   │   │   ├── auth.controller.ts    # Auth endpoints
+│   │   │   ├── auth.service.ts       # Auth logic
+│   │   │   ├── user.entity.ts        # User entity/model
+│   │   │   └── jwt.strategy.ts       # JWT strategy
+│   │   ├── Dockerfile                # Service Dockerfile (EXPOSE 23001)
+│   │   └── .env.example              # Service-specific env vars
+│   ├── order-service/
+│   │   ├── src/
+│   │   │   ├── main.ts
+│   │   │   ├── app.module.ts
+│   │   │   ├── order.controller.ts
+│   │   │   ├── order.service.ts
+│   │   │   ├── order.entity.ts
+│   │   │   └── event.publisher.ts    # Publishes to RabbitMQ
+│   │   ├── Dockerfile                # EXPOSE 23002
+│   │   └── .env.example
+│   ├── inventory-service/
+│   │   ├── src/
+│   │   │   ├── main.ts
+│   │   │   ├── app.module.ts
+│   │   │   ├── inventory.controller.ts
+│   │   │   ├── inventory.service.ts
+│   │   │   ├── inventory.entity.ts
+│   │   ├── Dockerfile                # EXPOSE 23003
+│   │   └── .env.example
+│   ├── product-service/
+│   │   ├── src/
+│   │   │   ├── main.ts
+│   │   │   ├── app.module.ts
+│   │   │   ├── product.controller.ts
+│   │   │   ├── product.service.ts
+│   │   │   ├── product.entity.ts
+│   │   ├── Dockerfile                # EXPOSE 23004
+│   │   └── .env.example
+│   ├── api-gateway/
+│   │   ├── src/
+│   │   │   ├── main.ts
+│   │   │   ├── app.module.ts
+│   │   │   ├── gateway.controller.ts
+│   │   │   ├── gateway.service.ts
+│   │   ├── Dockerfile                # EXPOSE 23005
+│   │   └── .env.example
 ├── frontend/
-│   ├── Dockerfile                          # Frontend Docker image
-│   ├── vite.config.ts                      # Vite config
-│   ├── tsconfig.json                       # TypeScript config
 │   ├── public/
-│   │   └── index.html                      # HTML entry point
+│   │   ├── index.html                # HTML entry point
 │   ├── src/
-│   │   ├── main.tsx                        # React entry point
-│   │   ├── App.tsx                         # Root component
+│   │   ├── main.tsx                  # React entry point
+│   │   ├── App.tsx                   # Root component
 │   │   ├── api/
-│   │   │   ├── ordenes.ts                  # Ordenes API client
-│   │   │   └── dashboard.ts                # Dashboard API client
+│   │   │   ├── auth.ts               # Auth API client
+│   │   │   ├── orders.ts             # Orders API client
+│   │   │   ├── inventory.ts          # Inventory API client
+│   │   │   ├── products.ts           # Products API client
 │   │   ├── hooks/
-│   │   │   ├── useOrdenes.ts               # Ordenes state hook
-│   │   │   └── useDashboard.ts             # Dashboard state hook
-│   │   ├── types/
-│   │   │   ├── orden.ts                    # Orden interface
-│   │   │   └── dashboard.ts                # DashboardData interface
+│   │   │   ├── useAuth.ts            # Auth state hook
+│   │   │   ├── useOrders.ts          # Orders state hook
+│   │   │   ├── useInventory.ts       # Inventory state hook
+│   │   │   ├── useProducts.ts        # Products state hook
 │   │   ├── components/
-│   │   │   ├── OrdenList.tsx               # Ordenes table/list
-│   │   │   ├── OrdenForm.tsx               # Orden creation form
-│   │   │   ├── DashboardKPIs.tsx           # KPIs display
-│   │   │   └── DespachosChart.tsx          # Despachos chart
-│   │   └── styles/
-│   │       └── main.css                    # Global styles
-│   └── README.md                           # Frontend documentation
+│   │   │   ├── OrderList.tsx         # Order list component
+│   │   │   ├── OrderForm.tsx         # Order creation form
+│   │   │   ├── InventoryStatus.tsx   # Inventory status display
+│   │   │   ├── ProductList.tsx       # Product list component
+│   │   │   ├── LoginForm.tsx         # Login form
+│   │   │   └── UserMenu.tsx          # User menu/profile
+│   │   ├── types/
+│   │   │   ├── order.ts              # Order interfaces
+│   │   │   ├── inventory.ts          # Inventory interfaces
+│   │   │   ├── user.ts               # User interfaces
+│   │   │   ├── product.ts            # Product interfaces
+│   ├── Dockerfile                    # EXPOSE 23006
+│   └── .env.example
+├── k8s/
+│   ├── auth-deployment.yaml          # Kubernetes deployment for auth-service
+│   ├── order-deployment.yaml         # Kubernetes deployment for order-service
+│   ├── inventory-deployment.yaml     # Kubernetes deployment for inventory-service
+│   ├── product-deployment.yaml       # Kubernetes deployment for product-service
+│   ├── gateway-deployment.yaml       # Kubernetes deployment for api-gateway
+│   ├── frontend-deployment.yaml      # Kubernetes deployment for frontend
+│   ├── postgres-deployment.yaml      # PostgreSQL deployment
+│   ├── redis-deployment.yaml         # Redis deployment
+│   ├── rabbitmq-deployment.yaml      # RabbitMQ deployment
+│   └── ingress.yaml                  # Ingress configuration
 ```
 
 ---
 
 ## 5. ENVIRONMENT VARIABLES
 
-| Name                    | Type   | Description                                      | Example Value                |
-|-------------------------|--------|--------------------------------------------------|-----------------------------|
-| NODE_ENV                | string | Node.js environment                              | production                  |
-| API_PORT                | number | API service listening port                       | 23001                       |
-| FRONTEND_PORT           | number | Frontend dev server port                         | 24000                       |
-| POSTGRES_HOST           | string | PostgreSQL host                                  | postgres                    |
-| POSTGRES_PORT           | number | PostgreSQL port (container-internal: 5432)       | 5432                        |
-| POSTGRES_USER           | string | PostgreSQL username                              | distroviz                   |
-| POSTGRES_PASSWORD       | string | PostgreSQL password                              | distrovizpw                 |
-| POSTGRES_DB             | string | PostgreSQL database name                         | distrovizdb                 |
-| REDIS_HOST              | string | Redis host                                       | redis                       |
-| REDIS_PORT              | number | Redis port (container-internal: 6379)            | 6379                        |
-| REDIS_CACHE_TTL         | number | Redis cache TTL in seconds                       | 300                         |
-| VITE_API_URL            | string | Frontend: base URL for API requests              | http://localhost:23001/api  |
+| Name                        | Type    | Description                                         | Example Value                |
+|-----------------------------|---------|-----------------------------------------------------|-----------------------------|
+| NODE_ENV                    | string  | Node environment                                    | production                  |
+| PORT                        | number  | Service listening port                              | 23001                       |
+| DATABASE_URL                | string  | PostgreSQL connection string                        | postgres://user:pass@db:5432/distroviz |
+| REDIS_URL                   | string  | Redis connection string                             | redis://redis:6379          |
+| RABBITMQ_URL                | string  | RabbitMQ connection string                          | amqp://rabbitmq:5672        |
+| JWT_SECRET                  | string  | JWT signing secret (auth-service)                   | supersecretjwtkey           |
+| JWT_EXPIRES_IN              | string  | JWT expiration (e.g., 3600s)                        | 3600s                       |
+| API_GATEWAY_URL             | string  | API Gateway base URL                                | http://api-gateway:23005    |
+| FRONTEND_URL                | string  | Frontend base URL                                   | http://localhost:23006      |
+| POSTGRES_USER               | string  | PostgreSQL username                                 | distroviz                   |
+| POSTGRES_PASSWORD           | string  | PostgreSQL password                                 | distrovizpass               |
+| POSTGRES_DB                 | string  | PostgreSQL database name                            | distroviz                   |
+| REACT_APP_API_URL           | string  | Frontend: API Gateway URL                           | http://localhost:23005      |
 
 ---
 
@@ -305,80 +427,42 @@ export interface CreateOrdenDto {
 
 ### Backend
 
-```typescript
-// backend/api-service/src/ordenes/ordenes.service.ts
-import { Orden, CreateOrdenDto } from '../../shared/types/orden';
-
-// backend/api-service/src/dashboard/dashboard.service.ts
-import { DashboardData, GraficoDespachos } from '../../shared/types/dashboard';
-
-// backend/api-service/src/shared/cache.service.ts
-export class CacheService {
-  get<T>(key: string): Promise<T | null>;
-  set<T>(key: string, value: T, ttl: number): Promise<void>;
-  del(key: string): Promise<void>;
-}
-
-// backend/api-service/src/shared/db.service.ts
-export class DbService {
-  query<T>(sql: string, params?: any[]): Promise<T[]>;
-  execute(sql: string, params?: any[]): Promise<void>;
-}
-```
+- `from 'backend/shared/dtos/order.dto' import Order, OrderCreateRequest, OrderCreateResponse`
+- `from 'backend/shared/dtos/inventory.dto' import InventoryItem, InventoryCheckRequest, InventoryCheckResponse`
+- `from 'backend/shared/dtos/user.dto' import User`
+- `from 'backend/shared/dtos/product.dto' import Product`
+- `from 'backend/shared/utils/redis' import getRedisClient`
 
 ### Frontend
 
-```typescript
-// frontend/src/api/ordenes.ts
-import { Orden, CreateOrdenDto } from '../types/orden';
-export async function fetchOrdenes(): Promise<Orden[]>;
-export async function createOrden(data: CreateOrdenDto): Promise<Orden>;
-export async function deleteOrden(id: number): Promise<void>;
-
-// frontend/src/api/dashboard.ts
-import { DashboardData } from '../types/dashboard';
-export async function fetchDashboard(): Promise<DashboardData>;
-
-// frontend/src/hooks/useOrdenes.ts
-import { Orden, CreateOrdenDto } from '../types/orden';
-export function useOrdenes(): {
-  ordenes: Orden[];
-  loading: boolean;
-  error: string | null;
-  createOrden: (data: CreateOrdenDto) => Promise<void>;
-  deleteOrden: (id: number) => Promise<void>;
-  deletingId: number | null;
-};
-
-// frontend/src/hooks/useDashboard.ts
-import { DashboardData } from '../types/dashboard';
-export function useDashboard(): {
-  dashboard: DashboardData | null;
-  loading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-};
-```
+- `import { Order, OrderCreateRequest, OrderCreateResponse } from '../types/order'`
+- `import { InventoryItem, InventoryCheckRequest, InventoryCheckResponse } from '../types/inventory'`
+- `import { User } from '../types/user'`
+- `import { Product } from '../types/product'`
+- `import { useAuth } from '../hooks/useAuth'`
+- `import { useOrders } from '../hooks/useOrders'`
+- `import { useInventory } from '../hooks/useInventory'`
+- `import { useProducts } from '../hooks/useProducts'`
 
 ---
 
 ## 7. FRONTEND STATE & COMPONENT CONTRACTS
 
-### Shared State Primitives
+### Shared State Primitives (React Hooks)
 
-```
-React hook: useOrdenes() → { ordenes, loading, error, createOrden, deleteOrden, deletingId }
-React hook: useDashboard() → { dashboard, loading, error, refresh }
-```
+- `useAuth() → { user, loading, error, login, logout, isAuthenticated }`
+- `useOrders() → { orders, loading, error, createOrder, updateOrderStatus, fetchOrders }`
+- `useInventory() → { inventory, loading, error, checkInventory, fetchInventory }`
+- `useProducts() → { products, loading, error, fetchProducts }`
 
 ### Reusable Components
 
-```
-OrdenList props/inputs: { ordenes: Orden[], onDelete: (id: number) => void, deletingId: number | null }
-OrdenForm props/inputs: { onSubmit: (data: CreateOrdenDto) => void, loading: boolean }
-DashboardKPIs props/inputs: { dashboard: DashboardData | null }
-DespachosChart props/inputs: { graficoDespachos: GraficoDespachos[] }
-```
+- `OrderList` props: `{ orders: Order[], onStatusChange: (id: string, status: Order['status']) => void }`
+- `OrderForm` props: `{ onSubmit: (data: OrderCreateRequest) => void, loading: boolean }`
+- `InventoryStatus` props: `{ inventory: InventoryItem | null, loading: boolean }`
+- `ProductList` props: `{ products: Product[], onSelect: (id: string) => void }`
+- `LoginForm` props: `{ onLogin: (username: string, password: string) => void, loading: boolean, error: string | null }`
+- `UserMenu` props: `{ user: User, onLogout: () => void }`
 
 ---
 
@@ -387,6 +471,6 @@ DespachosChart props/inputs: { graficoDespachos: GraficoDespachos[] }
 - **Frontend files:** `.tsx` (TypeScript React)
 - **Backend files:** `.ts` (TypeScript)
 - **Project language:** TypeScript (no JavaScript files)
-- **Frontend entry point:** `/src/main.tsx` (as referenced in `public/index.html`)
+- **Entry point:** `/src/main.tsx` (as referenced in `public/index.html`)
 
 ---

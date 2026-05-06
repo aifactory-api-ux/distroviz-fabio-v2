@@ -2,73 +2,153 @@ version: '3.8'
 
 services:
   postgres:
-    build:
-      context: ./infrastructure/postgres
-    container_name: distroviz_postgres
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: distroviz
-      POSTGRES_PASSWORD: distrovizpw
-      POSTGRES_DB: distrovizdb
+      POSTGRES_PASSWORD: distrovizpass
+      POSTGRES_DB: distroviz
     ports:
-      - "25432:5432"
+      - '25432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U distroviz -d distrovizdb"]
+      test: ['CMD-SHELL', 'pg_isready -U distroviz']
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
-    build:
-      context: ./infrastructure/redis
-    container_name: distroviz_redis
+    image: redis:7-alpine
     ports:
-      - "26379:6379"
+      - '26379:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  api-service:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - '25672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
     build:
-      context: ./backend/api-service
-    container_name: distroviz_api
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
     environment:
       NODE_ENV: production
-      API_PORT: 23001
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: distroviz
-      POSTGRES_PASSWORD: distrovizpw
-      POSTGRES_DB: distrovizdb
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_CACHE_TTL: 300
+      PORT: 23001
+      DATABASE_URL: postgres://distroviz:distrovizpass@postgres:5432/distroviz
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: supersecretjwtkey
+      JWT_EXPIRES_IN: 3600s
     ports:
-      - "23001:23001"
+      - '23001:23001'
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:23001/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  order-service:
+    build:
+      context: ./backend/order-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 23002
+      DATABASE_URL: postgres://distroviz:distrovizpass@postgres:5432/distroviz
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      API_GATEWAY_URL: http://api-gateway:23005
+    ports:
+      - '23002:23002'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  inventory-service:
+    build:
+      context: ./backend/inventory-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 23003
+      DATABASE_URL: postgres://distroviz:distrovizpass@postgres:5432/distroviz
+      REDIS_URL: redis://redis:6379
+    ports:
+      - '23003:23003'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  product-service:
+    build:
+      context: ./backend/product-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 23004
+      DATABASE_URL: postgres://distroviz:distrovizpass@postgres:5432/distroviz
+      REDIS_URL: redis://redis:6379
+    ports:
+      - '23004:23004'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 23005
+      AUTH_SERVICE_URL: http://auth-service:23001
+      ORDER_SERVICE_URL: http://order-service:23002
+      INVENTORY_SERVICE_URL: http://inventory-service:23003
+      PRODUCT_SERVICE_URL: http://product-service:23004
+      FRONTEND_URL: http://localhost:23006
+    ports:
+      - '23005:23005'
+    depends_on:
+      auth-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      product-service:
+        condition: service_started
 
   frontend:
     build:
       context: ./frontend
-    container_name: distroviz_frontend
+      dockerfile: Dockerfile
     environment:
-      VITE_API_URL: http://localhost:23001/api
+      VITE_API_URL: http://localhost:23005
     ports:
-      - "24000:24000"
+      - '23006:23006'
     depends_on:
-      - api-service
+      - api-gateway
 
 volumes:
   postgres_data:

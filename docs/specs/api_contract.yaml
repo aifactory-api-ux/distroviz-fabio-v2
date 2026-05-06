@@ -1,112 +1,196 @@
 # API_CONTRACT.md
 
-## GET /api/dashboard
+## Auth Service
 
-| Property         | Value                |
-|------------------|---------------------|
-| HTTP Method      | GET                 |
-| Path             | /api/dashboard      |
-| Request Body     | None                |
-| Response Status  | 200 OK              |
-| Auth Required    | No                  |
+### POST /api/auth/login
 
-**Response Body Schema:**  
-Type: `DashboardData`
+| Method | Path                | Auth Required | Request Body                                      | Response Body         | Status Codes |
+|--------|---------------------|--------------|---------------------------------------------------|----------------------|-------------|
+| POST   | /api/auth/login     | No           | `{ username: string; password: string }`          | `AuthTokenResponse`  | 200         |
 
-| Field               | Type                     | Required |
-|---------------------|--------------------------|----------|
-| totalOrdenes        | number                   | Yes      |
-| totalDespachadas    | number                   | Yes      |
-| totalEntregadas     | number                   | Yes      |
-| ordenesPendientes   | number                   | Yes      |
-| graficoDespachos    | GraficoDespachos[]       | Yes      |
+#### AuthTokenResponse
 
-**GraficoDespachos**
-
-| Field   | Type    | Required |
-|---------|---------|----------|
-| fecha   | string  | Yes      |
-| cantidad| number  | Yes      |
-
+```typescript
+{
+  accessToken: string;
+  expiresIn: number;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    role: 'ADMIN' | 'USER';
+    createdAt: string;
+  };
+}
+```
 
 ---
 
-## GET /api/ordenes
+### GET /api/auth/me
 
-| Property         | Value                |
-|------------------|---------------------|
-| HTTP Method      | GET                 |
-| Path             | /api/ordenes        |
-| Request Body     | None                |
-| Response Status  | 200 OK              |
-| Auth Required    | No                  |
+| Method | Path            | Auth Required | Request Body | Response Body | Status Codes |
+|--------|-----------------|--------------|--------------|--------------|-------------|
+| GET    | /api/auth/me    | Yes (Bearer) | None         | `User`       | 200         |
 
-**Response Body Schema:**  
-Type: `Orden[]`
+#### User
 
-**Orden**
-
-| Field                | Type                                               | Required |
-|----------------------|----------------------------------------------------|----------|
-| id                   | number                                             | Yes      |
-| fecha                | string (ISO 8601 date string)                      | Yes      |
-| planta               | string                                             | Yes      |
-| centroDistribucion   | string                                             | Yes      |
-| producto             | string                                             | Yes      |
-| cantidad             | number                                             | Yes      |
-| estado               | 'pendiente' \| 'despachado' \| 'entregado'         | Yes      |
-
+```typescript
+{
+  id: string;
+  username: string;
+  email: string;
+  role: 'ADMIN' | 'USER';
+  createdAt: string;
+}
+```
 
 ---
 
-## POST /api/ordenes
+## Order Service
 
-| Property         | Value                |
-|------------------|---------------------|
-| HTTP Method      | POST                |
-| Path             | /api/ordenes        |
-| Request Body     | CreateOrdenDto      |
-| Response Status  | 201 Created         |
-| Auth Required    | No                  |
+### POST /api/orders
 
-**Request Body Schema:**  
-Type: `CreateOrdenDto`
+| Method | Path           | Auth Required | Request Body             | Response Body           | Status Codes |
+|--------|----------------|--------------|--------------------------|------------------------|-------------|
+| POST   | /api/orders    | No           | `OrderCreateRequest`     | `OrderCreateResponse`  | 200         |
 
-| Field                | Type                                               | Required |
-|----------------------|----------------------------------------------------|----------|
-| fecha                | string (ISO 8601 date string)                      | Yes      |
-| planta               | string                                             | Yes      |
-| centroDistribucion   | string                                             | Yes      |
-| producto             | string                                             | Yes      |
-| cantidad             | number                                             | Yes      |
-| estado               | 'pendiente' \| 'despachado' \| 'entregado'         | Yes      |
+#### OrderCreateRequest
 
-**Response Body Schema:**  
-Type: `Orden`
+```typescript
+{
+  userId: string;
+  productId: string;
+  quantity: number;
+}
+```
 
-| Field                | Type                                               | Required |
-|----------------------|----------------------------------------------------|----------|
-| id                   | number                                             | Yes      |
-| fecha                | string (ISO 8601 date string)                      | Yes      |
-| planta               | string                                             | Yes      |
-| centroDistribucion   | string                                             | Yes      |
-| producto             | string                                             | Yes      |
-| cantidad             | number                                             | Yes      |
-| estado               | 'pendiente' \| 'despachado' \| 'entregado'         | Yes      |
+#### OrderCreateResponse
 
+```typescript
+{
+  order: {
+    id: string;
+    userId: string;
+    productId: string;
+    quantity: number;
+    status: 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'CANCELLED';
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+```
 
 ---
 
-## DELETE /api/ordenes/:id
+### GET /api/orders
 
-| Property         | Value                |
-|------------------|---------------------|
-| HTTP Method      | DELETE              |
-| Path             | /api/ordenes/:id    |
-| Request Body     | None                |
-| Response Status  | 204 No Content      |
-| Auth Required    | No                  |
+| Method | Path           | Auth Required | Query Params         | Request Body | Response Body           | Status Codes |
+|--------|----------------|--------------|----------------------|--------------|------------------------|-------------|
+| GET    | /api/orders    | No           | userId?: string      | None         | `{ orders: Order[] }`  | 200         |
 
-**Response Body:** None
+#### Order
+
+```typescript
+{
+  id: string;
+  userId: string;
+  productId: string;
+  quantity: number;
+  status: 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+}
+```
 
 ---
+
+### GET /api/orders/:id
+
+| Method | Path                | Auth Required | Request Body | Response Body | Status Codes |
+|--------|---------------------|--------------|--------------|--------------|-------------|
+| GET    | /api/orders/:id     | No           | None         | `Order`      | 200         |
+
+---
+
+### PATCH /api/orders/:id/status
+
+| Method | Path                        | Auth Required | Request Body                                                      | Response Body | Status Codes |
+|--------|-----------------------------|--------------|-------------------------------------------------------------------|--------------|-------------|
+| PATCH  | /api/orders/:id/status      | No           | `{ status: 'PENDING' \| 'CONFIRMED' \| 'DISPATCHED' \| 'CANCELLED' }` | `Order`      | 200         |
+
+---
+
+## Inventory Service
+
+### GET /api/inventory/:productId
+
+| Method | Path                      | Auth Required | Request Body | Response Body     | Status Codes |
+|--------|---------------------------|--------------|--------------|------------------|-------------|
+| GET    | /api/inventory/:productId | No           | None         | `InventoryItem`  | 200         |
+
+#### InventoryItem
+
+```typescript
+{
+  id: string;
+  productId: string;
+  stock: number;
+  updatedAt: string;
+}
+```
+
+---
+
+### POST /api/inventory/check
+
+| Method | Path                   | Auth Required | Request Body                | Response Body             | Status Codes |
+|--------|------------------------|--------------|-----------------------------|--------------------------|-------------|
+| POST   | /api/inventory/check   | No           | `InventoryCheckRequest`     | `InventoryCheckResponse` | 200         |
+
+#### InventoryCheckRequest
+
+```typescript
+{
+  productId: string;
+  quantity: number;
+}
+```
+
+#### InventoryCheckResponse
+
+```typescript
+{
+  available: boolean;
+  currentStock: number;
+}
+```
+
+---
+
+## Product Service
+
+### GET /api/products
+
+| Method | Path           | Auth Required | Request Body | Response Body              | Status Codes |
+|--------|----------------|--------------|--------------|---------------------------|-------------|
+| GET    | /api/products  | No           | None         | `{ products: Product[] }` | 200         |
+
+#### Product
+
+```typescript
+{
+  id: string;
+  name: string;
+  description: string;
+  sku: string;
+  createdAt: string;
+}
+```
+
+---
+
+### GET /api/products/:id
+
+| Method | Path                | Auth Required | Request Body | Response Body | Status Codes |
+|--------|---------------------|--------------|--------------|--------------|-------------|
+| GET    | /api/products/:id   | No           | None         | `Product`    | 200         |
