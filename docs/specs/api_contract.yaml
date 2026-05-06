@@ -1,0 +1,112 @@
+# API_CONTRACT.md
+
+## GET /api/dashboard
+
+| Property         | Value                |
+|------------------|---------------------|
+| HTTP Method      | GET                 |
+| Path             | /api/dashboard      |
+| Request Body     | None                |
+| Response Status  | 200 OK              |
+| Auth Required    | No                  |
+
+**Response Body Schema:**  
+Type: `DashboardData`
+
+| Field               | Type                     | Required |
+|---------------------|--------------------------|----------|
+| totalOrdenes        | number                   | Yes      |
+| totalDespachadas    | number                   | Yes      |
+| totalEntregadas     | number                   | Yes      |
+| ordenesPendientes   | number                   | Yes      |
+| graficoDespachos    | GraficoDespachos[]       | Yes      |
+
+**GraficoDespachos**
+
+| Field   | Type    | Required |
+|---------|---------|----------|
+| fecha   | string  | Yes      |
+| cantidad| number  | Yes      |
+
+
+---
+
+## GET /api/ordenes
+
+| Property         | Value                |
+|------------------|---------------------|
+| HTTP Method      | GET                 |
+| Path             | /api/ordenes        |
+| Request Body     | None                |
+| Response Status  | 200 OK              |
+| Auth Required    | No                  |
+
+**Response Body Schema:**  
+Type: `Orden[]`
+
+**Orden**
+
+| Field                | Type                                               | Required |
+|----------------------|----------------------------------------------------|----------|
+| id                   | number                                             | Yes      |
+| fecha                | string (ISO 8601 date string)                      | Yes      |
+| planta               | string                                             | Yes      |
+| centroDistribucion   | string                                             | Yes      |
+| producto             | string                                             | Yes      |
+| cantidad             | number                                             | Yes      |
+| estado               | 'pendiente' \| 'despachado' \| 'entregado'         | Yes      |
+
+
+---
+
+## POST /api/ordenes
+
+| Property         | Value                |
+|------------------|---------------------|
+| HTTP Method      | POST                |
+| Path             | /api/ordenes        |
+| Request Body     | CreateOrdenDto      |
+| Response Status  | 201 Created         |
+| Auth Required    | No                  |
+
+**Request Body Schema:**  
+Type: `CreateOrdenDto`
+
+| Field                | Type                                               | Required |
+|----------------------|----------------------------------------------------|----------|
+| fecha                | string (ISO 8601 date string)                      | Yes      |
+| planta               | string                                             | Yes      |
+| centroDistribucion   | string                                             | Yes      |
+| producto             | string                                             | Yes      |
+| cantidad             | number                                             | Yes      |
+| estado               | 'pendiente' \| 'despachado' \| 'entregado'         | Yes      |
+
+**Response Body Schema:**  
+Type: `Orden`
+
+| Field                | Type                                               | Required |
+|----------------------|----------------------------------------------------|----------|
+| id                   | number                                             | Yes      |
+| fecha                | string (ISO 8601 date string)                      | Yes      |
+| planta               | string                                             | Yes      |
+| centroDistribucion   | string                                             | Yes      |
+| producto             | string                                             | Yes      |
+| cantidad             | number                                             | Yes      |
+| estado               | 'pendiente' \| 'despachado' \| 'entregado'         | Yes      |
+
+
+---
+
+## DELETE /api/ordenes/:id
+
+| Property         | Value                |
+|------------------|---------------------|
+| HTTP Method      | DELETE              |
+| Path             | /api/ordenes/:id    |
+| Request Body     | None                |
+| Response Status  | 204 No Content      |
+| Auth Required    | No                  |
+
+**Response Body:** None
+
+---

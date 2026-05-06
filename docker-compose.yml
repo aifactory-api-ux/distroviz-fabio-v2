@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    build:
+      context: ./infrastructure/postgres
+    container_name: distroviz_postgres
+    environment:
+      POSTGRES_USER: distroviz
+      POSTGRES_PASSWORD: distrovizpw
+      POSTGRES_DB: distrovizdb
+    ports:
+      - "25432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U distroviz -d distrovizdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    build:
+      context: ./infrastructure/redis
+    container_name: distroviz_redis
+    ports:
+      - "26379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-service:
+    build:
+      context: ./backend/api-service
+    container_name: distroviz_api
+    environment:
+      NODE_ENV: production
+      API_PORT: 23001
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: distroviz
+      POSTGRES_PASSWORD: distrovizpw
+      POSTGRES_DB: distrovizdb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CACHE_TTL: 300
+    ports:
+      - "23001:23001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:23001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: distroviz_frontend
+    environment:
+      VITE_API_URL: http://localhost:23001/api
+    ports:
+      - "24000:24000"
+    depends_on:
+      - api-service
+
+volumes:
+  postgres_data:
