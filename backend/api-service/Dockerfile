@@ -9,6 +9,8 @@ COPY . .
 
 RUN npm run build
 
+RUN apk add --no-cache curl
+
 EXPOSE 23001
 
 CMD ["node", "dist/main.js"]
