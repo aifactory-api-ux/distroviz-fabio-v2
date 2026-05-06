@@ -3,16 +3,17 @@ import * as amqp from 'amqplib';
 
 @Injectable()
 export class EventPublisher implements OnModuleInit {
-  private connection: amqp.Connection | null = null;
+  private connection: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
 
   async onModuleInit() {
     try {
       const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:25672';
-      this.connection = await amqp.connect(url);
-      const channel = await this.connection.createChannel();
+      const connection = await amqp.connect(url);
+      this.connection = connection;
+      const channel = await connection.createChannel();
       this.channel = channel;
-      await this.channel.assertQueue('order_events', { durable: true });
+      await channel.assertQueue('order_events', { durable: true });
       console.log('RabbitMQ connection established in order-service');
     } catch (error) {
       console.error('Failed to connect to RabbitMQ:', error);
