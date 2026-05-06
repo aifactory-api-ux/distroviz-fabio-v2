@@ -9,7 +9,7 @@ describe('vite.config.ts', () => {
 
   it('supports TypeScript and React plugins', () => {
     expect(viteConfig.plugins).toBeDefined();
-    expect(viteConfig.plugins.some((p: any) => p.name === 'react')).toBe(true);
+    expect(viteConfig.plugins.some((p: any) => p.name === 'vite-plugin-react')).toBe(true);
   });
 
   it('has resolve alias configured', () => {

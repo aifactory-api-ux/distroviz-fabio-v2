@@ -1,12 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockFetch = vi.fn();
 
+const originalFetch = global.fetch;
 global.fetch = mockFetch;
 
 describe('ordenes API', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('fetchOrdenes returns array of Orden on 200 OK', async () => {

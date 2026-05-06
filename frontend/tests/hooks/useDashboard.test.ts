@@ -32,6 +32,9 @@ describe('useDashboard hook', () => {
     await waitFor(() => {
       expect(result.current.dashboard).toEqual(dashboardData);
     });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
   });
 
   it('handles API error on fetch', async () => {
@@ -41,6 +44,12 @@ describe('useDashboard hook', () => {
 
     await waitFor(() => {
       expect(result.current.error).toBeDefined();
+    });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+    await waitFor(() => {
+      expect(result.current.dashboard).toBeNull();
     });
   });
 

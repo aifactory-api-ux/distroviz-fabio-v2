@@ -1,12 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockFetch = vi.fn();
 
+const originalFetch = global.fetch;
 global.fetch = mockFetch;
 
 describe('dashboard API', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('fetchDashboardData returns DashboardData on 200 OK', async () => {
